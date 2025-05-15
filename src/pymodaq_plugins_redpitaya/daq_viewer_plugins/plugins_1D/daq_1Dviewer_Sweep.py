@@ -1,4 +1,5 @@
 import numpy as np
+from hatch.cli.config import set_value
 from qtpy import QtWidgets
 from qtpy.QtCore import QThread
 
@@ -58,8 +59,7 @@ class DAQ_1DViewer_Sweep(DAQ_1DViewer_RedPitayaSCPI):
         {'title': 'Sweep Stop Frequency', 'name': 'sweep_stop_frequency', 'type': 'float',
          'limits': AnalogOutputFastChannel.FREQUENCIES,
          'value': plugin_config('generator', 'sweep_stop_frequency')},
-        {'title': 'Sweep Time', 'name': 'sweep_time', 'type': 'int', 'limits': AnalogOutputFastChannel.TIME,
-         'value': plugin_config('generator', 'time')},
+        {'title': 'Sweep Time (µs)', 'name': 'sweep_time', 'type': 'int', 'limits': AnalogOutputFastChannel.TIME,'readonly': True},
         {'title': 'Sweep State', 'name': 'sweep_state', 'type': 'bool', 'value': False},
         {'title': 'Sweep Direction', 'name': 'sweep_direction', 'type': 'list', 'limits': AnalogOutputFastChannel.DIRECTION,
          'value': plugin_config('generator', 'direction')},
@@ -96,10 +96,21 @@ class DAQ_1DViewer_Sweep(DAQ_1DViewer_RedPitayaSCPI):
             self.aout.sweep_start_frequency = param.value()
         elif param.name() == 'sweep_stop_frequency':
             self.aout.sweep_stop_frequency = param.value()
+        #elif param.name() == 'sweep_time':
+            #self.aout.sweep_time = self.settings('output','sweep_time').setValue(self.controller.nsamples/self.controller.sample_rate)
+            #if self.aout.sweep_time < 1:
+             #   self.emit_status(ThreadCommand("Update_Status", [str(e), 'log']))
+              #  self.aout.sweep_time = 1  self.settings('sampling','nsamples')*(1/self.settings('sampling','sample_rate'))
         elif param.name() == 'sweep_state':
             self.aout.sweep_state = param.value()
         elif param.name() == 'sweep_direction':
             self.aout.sweep_direction = param.value()
+
+    def ini_detector(self, controller=None):
+        info, initialized = super().ini_detector(controller)
+        for child in self.settings.child('output').children():
+            self.commit_settings(child)
+        return info, initialized
 
     @property
     def aout(self):
@@ -118,7 +129,6 @@ class DAQ_1DViewer_Sweep(DAQ_1DViewer_RedPitayaSCPI):
         kwargs: dict
             others optionals arguments
         """
-        self.controller.output_reset()
 
         nsamples = self.settings['sampling', 'nsamples']
         wait_time = nsamples / self.controller.CLOCK * self.settings['sampling', 'decimation']
@@ -131,13 +141,13 @@ class DAQ_1DViewer_Sweep(DAQ_1DViewer_RedPitayaSCPI):
         self.controller.acquisition_start()
 
 
-        QThread.msleep(max((1, int(wait_time * 1000))))
         self.controller.acq_trigger_source = self.settings['triggering', 'source']
 
         self.aout.sweep_state = True
         self.aout.enable = True
         self.aout.run()
 
+        QThread.msleep(max((1, int(wait_time * 1000))))
         while not self.controller.acq_trigger_status:
             QThread.msleep(10)
             QtWidgets.QApplication.processEvents()
