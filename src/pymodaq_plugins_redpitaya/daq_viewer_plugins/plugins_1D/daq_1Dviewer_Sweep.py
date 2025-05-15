@@ -52,17 +52,19 @@ class DAQ_1DViewer_Sweep(DAQ_1DViewer_RedPitayaSCPI):
         {'title': 'Phase', 'name': 'phase', 'type': 'float', 'limits': AnalogOutputFastChannel.PHASES,
          'value': plugin_config('generator', 'phase')},
         {'title': 'Sweep Mode', 'name': 'sweep_mode', 'type': 'list', 'limits': AnalogOutputFastChannel.SWEEP_MODES,
-         'value': plugin_config('generator', 'sweep_modes')},
+         'value': plugin_config('sweep', 'sweep_modes')},
         {'title': 'Sweep Start Frequency', 'name': 'sweep_start_frequency', 'type': 'float',
          'limits': AnalogOutputFastChannel.FREQUENCIES,
-         'value': plugin_config('generator', 'sweep_start_frequency')},
+         'value': plugin_config('sweep', 'sweep_start_frequency')},
         {'title': 'Sweep Stop Frequency', 'name': 'sweep_stop_frequency', 'type': 'float',
          'limits': AnalogOutputFastChannel.FREQUENCIES,
-         'value': plugin_config('generator', 'sweep_stop_frequency')},
-        {'title': 'Sweep Time (µs)', 'name': 'sweep_time', 'type': 'int', 'limits': AnalogOutputFastChannel.TIME,'readonly': True},
+         'value': plugin_config('sweep', 'sweep_stop_frequency')},
+        {'title': 'Sweep Time (µs)', 'name': 'sweep_time', 'type': 'int',
+         'limits': [int(t) for t in AnalogOutputFastChannel.TIME],
+         'value': plugin_config('sweep', 'sweep_time'), 'readonly': False},
         {'title': 'Sweep State', 'name': 'sweep_state', 'type': 'bool', 'value': False},
         {'title': 'Sweep Direction', 'name': 'sweep_direction', 'type': 'list', 'limits': AnalogOutputFastChannel.DIRECTION,
-         'value': plugin_config('generator', 'direction')},
+         'value': plugin_config('sweep', 'direction')},
     ]},
     ]
 
@@ -96,11 +98,14 @@ class DAQ_1DViewer_Sweep(DAQ_1DViewer_RedPitayaSCPI):
             self.aout.sweep_start_frequency = param.value()
         elif param.name() == 'sweep_stop_frequency':
             self.aout.sweep_stop_frequency = param.value()
-        #elif param.name() == 'sweep_time':
-            #self.aout.sweep_time = self.settings('output','sweep_time').setValue(self.controller.nsamples/self.controller.sample_rate)
-            #if self.aout.sweep_time < 1:
-             #   self.emit_status(ThreadCommand("Update_Status", [str(e), 'log']))
-              #  self.aout.sweep_time = 1  self.settings('sampling','nsamples')*(1/self.settings('sampling','sample_rate'))
+        elif param.name() in ('decimation', 'nsamples'):
+            stime = int(self.settings['sampling', 'nsamples'] / self.settings['sampling', 'sample_rate'] * 1e6)
+            if stime < self.aout.TIME[0]:
+                self.emit_status(ThreadCommand("Update_Status",
+                                               [f'The sweep time cannot be smaller than {self.aout.TIME[0]} us', 'log']))
+                stime = self.aout.TIME[0]
+            self.aout.sweep_time = stime
+            self.settings.child('output', 'sweep_time').setValue(stime)
         elif param.name() == 'sweep_state':
             self.aout.sweep_state = param.value()
         elif param.name() == 'sweep_direction':
@@ -110,6 +115,9 @@ class DAQ_1DViewer_Sweep(DAQ_1DViewer_RedPitayaSCPI):
         info, initialized = super().ini_detector(controller)
         for child in self.settings.child('output').children():
             self.commit_settings(child)
+        self.settings.child('sampling','decimation').setValue(plugin_config('sweep', 'sweep_decimation'))
+        self.settings.child('sampling','nsamples').setValue(plugin_config('sweep', 'sweep_nsamples'))
+        self.settings.child('triggering', 'center_trigger').setValue(False)
         return info, initialized
 
     @property
