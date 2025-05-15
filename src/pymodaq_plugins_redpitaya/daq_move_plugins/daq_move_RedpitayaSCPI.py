@@ -24,7 +24,7 @@ class DAQ_Move_RedpitayaSCPI(DAQ_Move_base):
 
        * Should be compatible with all redpitaya flavours using the SCPI communication protocol
        * Tested with Red Pitaya 2.00-37 OS | STEMlab 125-14
-       * PyMoDAQ >= 5.0.1
+       * PyMoDAQ >= 5.0.5
        * Tested with Linux Ubuntu 24.04.1 LTS
        * Installation instruction:
         These instructions are valid when using an Ethernet cable to communicate with the Red Pitaya.
@@ -160,7 +160,7 @@ class DAQ_Move_RedpitayaSCPI(DAQ_Move_base):
 
         self.settings.child('bounds', 'is_bounds').setOpts(readonly=True)
 
-        self.aout.enable = self.settings['enable']
+        self.aout.enable = True
         self.aout.run()
 
         info = "Whatever info you want to log"
