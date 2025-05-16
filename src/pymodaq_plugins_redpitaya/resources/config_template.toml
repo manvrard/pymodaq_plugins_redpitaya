@@ -28,4 +28,6 @@ sweep_modes ='LINEAR'
 sweep_start_frequency = 10
 sweep_stop_frequency = 1e6
 sweep_time = 1e6
+sweep_decimation = 64
+sweep_nsamples = 8000
 direction = 'NORMAL'

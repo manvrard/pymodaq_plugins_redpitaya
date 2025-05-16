@@ -14,6 +14,7 @@ description = 'PyMoDAQ Plugin to use the Redpitaya electronic board'
 dependencies = [
     "pymodaq>=5.0.0",
     'pymeasure',
+    'pyvisa-py'
     #todo: list here all dependencies your package may have
 ]
 
