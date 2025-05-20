@@ -15,7 +15,7 @@ center_trigger = true
 [generator]
 gen_trigger = 'INT'
 enabling = false
-amplitude = 0.05 #in V # default 1
+amplitude = 0.1 #in V # default 1
 frequency = 1000 # in Hz
 shape = 'SINE'
 offset = 0 # in V
