@@ -73,6 +73,23 @@ class DAQ_Move_RedpitayaSCPI(DAQ_Move_base):
                       'value': plugin_config('generator', 'phase')},
                 {'title': 'Dutycycle', 'name': 'dutycycle', 'type': 'float', 'limits' : AnalogOutputFastChannel.CYCLES,
                       'value': plugin_config('generator', 'cycle')},
+
+                 {'title': 'Sweep', 'name': 'sweep_group', 'type': 'group', 'children': [
+                     {'title': 'Sweep Mode', 'name': 'sweep_mode', 'type': 'list', 'limits': AnalogOutputFastChannel.SWEEP_MODES,
+                      'value': plugin_config('sweep', 'sweep_modes')},
+                     {'title': 'Sweep Start Frequency', 'name': 'sweep_start_frequency', 'type': 'float',
+                      'limits': AnalogOutputFastChannel.FREQUENCIES,
+                      'value': plugin_config('sweep', 'sweep_start_frequency')},
+                     {'title': 'Sweep Stop Frequency', 'name': 'sweep_stop_frequency', 'type': 'float',
+                      'limits': AnalogOutputFastChannel.FREQUENCIES,
+                      'value': plugin_config('sweep', 'sweep_stop_frequency')},
+                     {'title': 'Sweep Time (µs)', 'name': 'sweep_time', 'type': 'int',
+                      'limits': [int(t) for t in AnalogOutputFastChannel.TIME],
+                      'value': plugin_config('sweep', 'sweep_time'), 'readonly': False},
+                     {'title': 'Sweep State', 'name': 'sweep_state', 'type': 'bool', 'value': False},
+                     {'title': 'Sweep Direction', 'name': 'sweep_direction', 'type': 'list', 'limits': AnalogOutputFastChannel.DIRECTION,
+                      'value': plugin_config('sweep', 'direction')},
+                 ]},
                 ] + comon_parameters_fun(is_multiaxes, axis_names=_axis_names, epsilon=_epsilon)
     # _epsilon is the initial default value for the epsilon parameter allowing pymodaq to know if the controller reached
     # the target value. It is the developer responsibility to put here a meaningful value
@@ -126,6 +143,18 @@ class DAQ_Move_RedpitayaSCPI(DAQ_Move_base):
             self.aout.phase = param.value()
         elif param.name() == 'dutycycle':
             self.aout.dutycycle = param.value()
+        elif param.name() == 'sweep_mode':
+            self.aout.sweep_mode = param.value()
+        elif param.name() == 'sweep_start_frequency':
+            self.aout.sweep_start_frequency = param.value()
+        elif param.name() == 'sweep_stop_frequency':
+            self.aout.sweep_stop_frequency = param.value()
+        elif param.name() == 'sweep_time':
+            self.aout.sweep_time = int(param.value())
+        elif param.name() == 'sweep_state':
+            self.aout.sweep_state = param.value()
+        elif param.name() == 'sweep_direction':
+            self.aout.sweep_direction = param.value()
 
     def is_enabled(self) -> bool:
         "It defines if the supply voltage is enabled on the output channel chosen"
@@ -198,8 +227,8 @@ class DAQ_Move_RedpitayaSCPI(DAQ_Move_base):
         pass
 
     def stop_motion(self):
-      """Stop the actuator and emits move_done signal"""
-    pass
+        """Stop the actuator and emits move_done signal"""
+        pass
 
 
 if __name__ == '__main__':
