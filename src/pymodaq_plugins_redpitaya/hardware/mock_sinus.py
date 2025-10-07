@@ -1,4 +1,5 @@
 import numpy as np
+from typing import Union
 
 from pymodaq_utils.math_utils import gauss1D
 
@@ -27,14 +28,29 @@ class MockSinus:
         if frequency >= 0.:
             self._frequency = frequency
 
-    def get_envelop(self, frequency: float):
+    def get_envelop(self, frequency: Union[float, np.ndarray]) -> np.ndarray:
         return 3 * (gauss1D(frequency, self._frequency_0, self._dfrequency_0)) + 1.0
 
-    def get_phase(self, frequency: float):
+    def get_phase(self, frequency: Union[float, np.ndarray]) -> np.ndarray:
         return np.arctan((frequency-self._frequency_0) / self._dfrequency_0)
 
     def snap(self) -> tuple[np.ndarray, np.ndarray]:
         return (np.sin(2*np.pi*self._frequency*self.get_time_axis()),
                 self.get_envelop(self.frequency) * np.sin(2*np.pi*self._frequency*self.get_time_axis()
                                                           + self.get_phase(self.frequency)))
+
+    def sweep(self, start, stop, duration, roll = False):
+        frequencies = np.linspace(start, stop, int(duration / self.sampling))
+
+        while len(frequencies) < self.Npts:
+            frequencies = np.concatenate((frequencies, frequencies))
+        if len(frequencies) > self.Npts:
+            frequencies = frequencies[:self.Npts]
+        if roll:
+            frequencies = np.roll(frequencies, np.random.randint(0, self.Npts))
+
+        return (np.sin(2*np.pi*frequencies*self.get_time_axis()),
+                self.get_envelop(frequencies) * np.sin(2*np.pi*frequencies*self.get_time_axis()
+                                                          + self.get_phase(frequencies)))
+
 
