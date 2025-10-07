@@ -8,13 +8,15 @@ class MockSinus:
         self._frequency = 1234  #Hz
         self._frequency_0 = 12340  #Hz resonance
         self._dfrequency_0 = 1567 #Hz width of the resonance
-        self.Npts = 1024
+        self.max_freq = 30000 # Hz
+        self.sampling = 1 / (10*self.max_freq)
+        self.Npts = 2**13+1
 
     def get_window(self):
-        return 5 / self._frequency
+        return self.sampling * self.Npts
 
     def get_time_axis(self):
-        return np.linspace(-self.get_window() /2, self.get_window()/2, self.Npts )
+        return np.linspace(-self.get_window() /2, self.get_window()/2, self.Npts, endpoint=True)
 
     @property
     def frequency(self):
