@@ -35,45 +35,39 @@ class WaveformComparison(DataMixerModel):
     def process_dte(self, dte: DataToExport):
         dte_processed = DataToExport('computed')
         if len(self.settings['data1D']['selected']) !=  0:
+            try:
+                dwa_loaded = dte.get_data_from_full_name(self.settings['data1D']['selected'][0])
 
-            dwa_loaded = dte.get_data_from_full_name(self.settings['data1D']['selected'][0])
+                dwa_ft = dwa_loaded.ft(0, axis_label='Frequency', axis_units='Hz')
+                dwa_ft.get_axis_from_index(0)[0].data *= 1/(2*np.pi)
 
-            dwa_ft = dwa_loaded.ft(1, axis_label='Frequency', axis_units='Hz')
-            dwa_ft.get_axis_from_index(0)[0].data *= 1/(2*np.pi)
+                #%%
+                peaks = dwa_ft.abs().find_peaks(height=100)
+                arg_max = int(np.argmax(dwa_ft.abs()).value())
 
-            #%%
-            peaks = dwa_ft.abs().find_peaks(height=100)
-            arg_max = np.argmax(dwa_ft.abs())
+                dwa_ft_square = (dwa_ft.abs()**2)
 
-            #%%
+                frequency = np.abs(dwa_ft.axes[0].get_data()[arg_max])
+                intensity = dwa_ft_square.isig[arg_max]
+                intensity_ratio = (intensity[1] / intensity[0])
+                phase = np.angle(dwa_ft.isig[arg_max])
+                relative_phase = np.unwrap(phase[1] - phase[0])
+                #%%
+                dwa_intensity = DataCalculated('Intensity', data=[intensity_ratio],
+                                               labels=['Intensity Ratio'],
+                                               )
+                dwa_phase = DataCalculated('Phase', data=[relative_phase],
+                                           labels=['Relative Phase'], units='rad',
+                                           )
+                dwa_frequency = DataCalculated('Frequency', data=[np.array([frequency])],
+                                           labels=['Relative Phase'], units='rad',
+                                           )
 
-
-            index_0 = int(dwa_loaded.shape[1] /2)
-
-            dwa_ft_square = (dwa_ft.abs()**2)
-
-            frequency = np.abs(dwa_ft.axes[0].get_data()[arg_max])
-            intensity = dwa_ft_square.isig[arg_max]
-            phase = np.angle(np.array([data_array[index_max] for data_array in dwa_ft.isig[index, index_0:]]))
-            #%%
-            dwa_intensity = DataCalculated('Intensity', data=[intensity[1,:] /
-                                                              intensity[0,:]],
-                                           labels=['Intensity'],
-                                           axes=[Axis('Frequency', units='Hz', data=frequency)])
-            dwa_phase = DataCalculated('Phase', data=[np.unwrap(phase[1,:] - phase[0,:])],
-                                       labels=['Phase'], units='rad',
-                                       axes=[Axis('Frequency', units='Hz', data=frequency)])
-
-            dte_processed.append(DataCalculated('Intensity',
-                                                data=[intensity],
-                                                labels=['Intensity'],
-                                                axes=[Axis('Frequency', units='Hz', data=frequency)]),
-                                 DataCalculated('Phase',
-                                                data=[phase],
-                                                labels=['Phase'],
-                                                axes=[Axis('Frequency', units='Hz', data=frequency)]))
-
-
+                dte_processed.append(dwa_intensity)
+                dte_processed.append(dwa_phase)
+                dte_processed.append(dwa_frequency)
+            except:
+                pass
         return dte_processed
 
 
